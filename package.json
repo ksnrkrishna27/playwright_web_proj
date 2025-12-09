@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test:SIT": "npx playwright test --config=playwright.SIT.config.ts"
+    "test-SIT": "cross-env ENV=sit npx playwright test",
+    "test-UAT": "cross-env ENV=uat npx playwright test"
   },
   "keywords": [],
   "author": "",
@@ -11,6 +12,7 @@
   "description": "",
   "devDependencies": {
     "@playwright/test": "^1.54.2",
-    "@types/node": "^24.2.0"
+    "@types/node": "^24.2.0",
+    "cross-env": "^10.1.0"
   }
 }
