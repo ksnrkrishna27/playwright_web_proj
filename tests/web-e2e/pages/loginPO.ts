@@ -18,6 +18,7 @@ export class LoginPO {
       xpath: locators.loginButton_xpath,
       options: { delay: 5000 },
     });
+    await this.page.waitForLoadState("domcontentloaded");
   }
 
   async loginValidation() {

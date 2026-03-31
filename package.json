@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test-SIT": "cross-env ENV=sit npx playwright test",
-    "test-UAT": "cross-env ENV=uat npx playwright test"
+    "test-SIT": "cross-env ENV=sit npx playwright test --headed",
+    "test-SIT-Headless": "cross-env ENV=sit npx playwright test",
+    "test-UAT": "cross-env ENV=uat npx playwright test --headed"
   },
   "keywords": [],
   "author": "",
