@@ -18,7 +18,7 @@ on:
         type: choice
         default: chrome
         options:
-          - chrome
+          - chromium
           - edge
           - firefox
       workers:
@@ -53,6 +53,7 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
+          if-no-files-found: ignore
 
       - name: Upload test results
         if: ${{ !cancelled() }}
@@ -60,3 +61,4 @@ jobs:
         with:
           name: test-results
           path: test-results/
+          if-no-files-found: ignore
