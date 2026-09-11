@@ -16,11 +16,13 @@ on:
       Browser:
         description: "Select the browser to run the scripts"
         type: choice
-        default: chrome
+        default: chromium
         options:
           - chromium
-          - edge
+          - Google Chrome
+          - Microsoft Edge
           - firefox
+          - webkit
       workers:
         description: "No.of workers to run the scripts in parallel"
         required: true
@@ -39,11 +41,13 @@ jobs:
         run: npm ci
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
+      - name: Install branded browsers
+        run: npx playwright install chrome msedge
       - name: Run Playwright tests
         run: |
           npx playwright test "${{ inputs.files }}" \
             --workers=${{ inputs.workers }} \
-            --browser=${{ inputs.Browser }}
+            --project=${{ inputs.Browser }}
         env:
           TEST_ENV: ${{ inputs.Environment }}
 
