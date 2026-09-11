@@ -19,8 +19,8 @@ on:
         default: chromium
         options:
           - chromium
-          - Google Chrome
-          - Microsoft Edge
+          - Google_Chrome
+          - Microsoft_Edge
           - firefox
           - webkit
       workers:
