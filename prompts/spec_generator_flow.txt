@@ -1,0 +1,263 @@
+Yes. The Spec Generator is a prompt-driven workflow; the agent controls the browser through Playwright MCP, then creates code that the Playwright CLI validates and runs.
+
+User instructions
+
+Spec Generator prompt
+
+Playwright MCP records and inspects the UI
+
+Action log verified locators
+
+1
+
+Repository-compliant page objects and spec
+
+Playwright CLI validates/runs the spec
+
+1. Start the generator
+
+Run:
+
+/spec-gen
+
+or load prompts/spec-generator.md:1.
+
+The generator is a set of instructions for Codex or Claude. It is not an nom command or standalone executable.
+
+2. Load project context
+
+Before opening the application, the generator reads:
+
+env for APP URL and recording credentials.
+
+playwright.config.ts.
+
+fixtures/fixtures.ts and utils/ExportFiles.ts.
+
+pageMaps/<appId>/_index.md, when available.
+
+Existing browser tabs.
+
+Credentials are used only for login and must never be exposed in generated files or conversation output.
+
+3. Start or reuse the MCP browser
+
+The generator uses mcp_playwright browser_* tools.
+
+It:
+
+Reuses the existing authenticated MCP tab when possible.
+
+Closes accidental duplicate tabs.
+
+Navigates to APP URL.
+
+Detects authentication blockers.
+
+Performs direct Salesforce UI login if necessary.
+
+Confirms the application loaded.
+
+Reports that it is ready for workflow instructions.
+
+The MCP browser is independent of playwright.config.ts; that configuration applies to generated test execution.
+
+4. Describe the workflow
+
+You can provide the complete flow:
+
+Open Opportunities, search for Acme, open the first result, update the status, save, and verify the success message.
+
+Or provide it incrementally:
+
+Click Opportunities.
+
+Search for Acme.
+
+Open the first result.
+
+The generator must execute only the actions you provide. It should not invent test data, assertions, or expected results.
+
+
+5. Resolve elements
+
+Before taking a large browser snapshot, the generator searches the relevant page map.
+
+For each requested element, it classifies it as:
+
+Known and reusable from the page map.
+
+Known but requiring browser verification.
+
+Unknown and requiring MCP inspection.
+
+If the page map is missing or too old, it discovers the element through the live browser.
+
+6. Execute each action through MCP
+
+For every instruction, the generator generally:
+
+1. Checks the current URL and page state.
+
+2. Uses a targeted MCP snapshot or DOM evaluation.
+
+3. Identifies the accessible role, name, label, and container.
+
+4. Builds a possible Playwright locator.
+
+5. Confirms that the locator identifies the intended element.
+
+6. Performs the click, fill, selection, or navigation.
+
+7. Waits for the expected UI transition.
+
+8. Records the successful action.
+
+9. Reports the result and waits for your next instruction.
+
+Example:
+
+You: Click Search
+
+Generator:
+
+Finds the Search button
+
+Verifies that it is unique
+
+Clicks through MCP
+
+Waits for the search panel to appear
+
+Records the action 
+
+Asks for the next step
+
+
+7. Maintain the action log
+
+Each successful interaction is added to an internal action log:
+
+navigate Opportunities page
+
+click Search button
+
+fill Account Name Acme
+
+click Apply Filters
+
+assert Acme appears in results.
+
+The action log becomes the source for:
+
+The automated Playwright test.
+
+The manual test case.
+
+Locator verification.
+
+Checkpoint and handover recovery.
+
+Failed actions are not silently added.
+
+8. Record assertions explicitly
+
+Assertions are recorded when you say something such as:
+
+Verify the success message appears.
+
+Check that the dialog disappears.
+
+Verify the Status field contains Approved.
+
+For this project, field or element state transitions must use:
+
+waitForElementToAppear(...)
+
+waitForElementToDisappear(...)
+
+The generated implementation must also reuse CommonPage and CONFIG. TIME_OUT.
+
+
+9. Translate MCP elements into framework code
+
+MCP snapshot references are temporary recording identifiers. They cannot be copied into the generated test. The generator converts them into durable locators, preferring:
+
+1. getByRole
+
+2. getByLabel
+
+3. getByText
+
+4. data-testid
+
+5. Stable Salesforce attributes
+
+6. CSS
+
+7. XPath only as a last resort
+
+In this repository, locators belong in elements.ts, actions in corelogic.ts, assertions in validations.ts, and composed flows in workflows.ts. The spec calls the public page facade.
+
+10. Finish, checkpoint, or hand over You have three session controls:
+
+stop: finish recording and offer to generate the files.
+
+checkpoint: save resumable state under checkpoint/.
+
+handoff or handover: save state under handover/ for another session.
+
+Checkpoint and handover close the MCP browser without generating the final spec.
+
+11. Review the proposed implementation
+
+After stop, the generator asks whether you want to generate the spec. Before changing files, this repository's AGENTS.md requires the generator to present:
+
+Proposed spec and page-object changes.
+
+Existing components it will reuse.
+
+Proposed locator and wait strategy-
+
+Relevant alternatives or tradeoffs.
+
+Code is written only after you approve that concrete approach.
+
+12. Verify locators
+
+Before writing the final test, the generator checks all recorded locators for uniqueness.
+
+Ambiguous locators are scoped to a dialog, section, row, or other stable container. Every locator should resolve to the expected element before generation.
+
+13. Generate the files
+
+The typical outputs are:
+
+tests/<feature>.spec.ts
+
+test_cases/<feature>-manual-TC.md
+
+If new automation support is needed, it may also update:
+
+pages/<area>/<feature>/elements.ts
+
+pages/<area>/<feature>/coreLogic.ts
+
+pages/<area>/<feature>/validations.ts
+
+pages/<area>/<feature>/workflows.ts
+
+utils/ExportFiles.ts
+
+14. Validate with Playwright CLI
+
+After generation, the CLI validates test discovery and imports:
+
+npx playwright test tests/<feature>.spec.ts --list
+
+Repository scripts can then execute it against an environment:
+
+npm run test:egdev tests/<feature>.spec.ts
+
+Thus, MCP records and inspects the live workflow; the CLI validates and executes the generated automation.
+
