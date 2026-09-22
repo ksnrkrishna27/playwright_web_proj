@@ -1,75 +1,47 @@
 # Project rules for AI agents
 
-You are working in a Playwright TypeScript automation project.
-Follow these rules for every code change.
+This repository is a Playwright TypeScript automation project. Follow these rules when generating or changing tests.
 
-## Stack
+## Framework layout
 
-- Playwright 1.56+ with TypeScript
-- Node 20+
-- Test runner: @playwright/test
-- Reporter: Allure + built-in HTML
-- CI: GitHub Actions, sharded
+- `playwright.config.ts` — Playwright configuration; tests are discovered from `tests/` and must end in `.e2e.ts`.
+- `tests/web-e2e/main/` — executable end-to-end test specs.
+- `tests/web-e2e/pages/` — page objects and shared locator definitions.
+- `tests/web-e2e/utils/` — reusable page utilities such as `CommonPO`.
+- `tests/web-e2e/test-data/` — TypeScript test-data modules and environment-specific test data.
+- `configs/` — environment JSON files and `envLoader.ts`.
+- `specs/` — numbered Markdown plans produced by the planner.
+- `prompts/` — generator workflow prompts.
+- `artifacts/` — runtime screenshots and other generated artifacts; do not use it for source files.
 
-## Folder structure
+## Runtime and commands
 
-- `src/pages/` — Page Object classes (one file per page)
-- `src/fixtures/` — Custom fixtures extending base test
-- `src/utils/` — Pure helpers, no test logic
-- `tests/` — Spec files, mirror app URL structure
-- `tests/data/` — JSON/CSV test data
-- `specs/` — Planner output (Markdown plans)
+- Node.js 24+ and Playwright 1.63+ are currently declared in `package.json`.
+- Use `ENV=sit` or `ENV=uat`; `configs/envLoader.ts` loads `configs/env.<env>.json`.
+- Available scripts are `npm run test-SIT`, `npm run test-SIT-Headless`, and `npm run test-UAT`.
+- Run one generated test with `npx playwright test <path> --project=<project>`.
+- Test discovery requires the `.e2e.ts` suffix. Do not generate `.spec.ts` files unless `playwright.config.ts` is changed with approval.
 
-## Coding conventions
+## Test conventions
 
-- Import test from `src/fixtures/base.ts`, never from `@playwright/test` directly
-- Use `test.describe` per feature area
-- One logical assertion group per test
-- Use `test.step` for readability when a flow has more than 3 actions
-- File names: kebab-case (`add-to-cart.spec.ts`)
+- Import `test` and `expect` from `@playwright/test`, matching the existing tests.
+- Put tests under `tests/web-e2e/main/` and use kebab-case names ending in `.e2e.ts`.
+- Use `test.describe` per feature and `test.step` for multi-action flows.
+- Reuse existing page objects, `locators.ts`, `CommonPO`, and `tests/web-e2e/test-data/` modules.
+- Do not put business logic or raw locator details in the spec when they belong in a page object.
+- Keep credentials in environment configuration; never expose credentials in generated files or output.
 
-## Locator priority (STRICT — do not deviate)
+## Locators and waits
 
-1. `getByRole` with accessible name
-2. `getByLabel` for form fields
-3. `getByTestId` (attribute is `data-test-id`)
-4. `getByText` only for genuinely static UI text
-5. CSS / XPath — forbidden unless approved in PR
+- Prefer accessible Playwright locators: `getByRole`, `getByLabel`, `getByPlaceholder`, and `getByText` where appropriate.
+- Check existing `tests/web-e2e/pages/locators.ts` before adding a locator.
+- If the current application requires an XPath or CSS locator, keep it centralized in `locators.ts` and verify it against the live page before using it.
+- Use Playwright auto-waiting and state-based waits. Do not use `page.waitForTimeout()`.
+- Do not use `page.evaluate()` unless there is no supported Playwright/MCP alternative.
 
-## Page Object contract
+## Assertions and safety
 
-- One class per page, extends `BasePage`
-- Constructor takes `page: Page` only
-- All locators declared as `readonly` in constructor
-- Action methods return `Promise<void>` OR the next page object
-- No `expect()` calls inside page objects — assertions belong in tests
-- No business logic in tests — put it in page objects or helpers
-
-## Assertion rules
-
-- Web-first assertions only (`expect(locator).toBeVisible()`)
-- No `page.waitForTimeout` — ever
-- No `waitForSelector` — use locator auto-waiting
-- Custom timeouts only when justified in a code comment
-
-## When adding a new test
-
-- Mirror the app URL structure inside `tests/`
-- Reuse existing page objects — do not create parallel infra
-- Load test data from `tests/data/`, not inline
-- Tag tests with `@smoke`, `@regression`, or `@critical` as appropriate
-
-## Forbidden
-
-- Do not skip or comment out failing tests to make CI green
-- Do not use `page.evaluate` unless there is no MCP tool alternative
-- Do not commit `.env`, credentials, `storage-state.json`, or auth tokens
-- Do not modify `playwright.config.ts` without asking
-- Do not add new npm dependencies without asking
-- Do not use `page.pause()` in committed code
-
-## When you (the agent) are unsure
-
-- Ask a clarifying question before generating code
-- Prefer a smaller, focused change over a big refactor
-- If a required file does not exist, ask before creating it
+- Keep assertions in tests, not page objects, wherever practical.
+- Preserve the original assertion intent when healing tests; never skip, weaken, or comment out a failing test.
+- Do not modify `playwright.config.ts`, add dependencies, or change shared page infrastructure without human approval.
+- Do not commit credentials, `.env` files, storage state, or auth tokens.
