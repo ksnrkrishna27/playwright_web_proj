@@ -11,24 +11,28 @@ export class LoginPO {
   }
 
   async login(url: string, username: string, password: string) {
-    await this.page.goto(url);
+    await this.page.goto(url, {
+      timeout: 60000,
+      waitUntil: "domcontentloaded",
+    });
     await this.page.locator(locators.username_xpath).fill(username);
     await this.page.locator(locators.pass_xpath).fill(password);
     await this.commonPage.clickOnElement({
       xpath: locators.loginButton_xpath,
       options: { delay: 5000 },
     });
+    console.log(`Logged into ${process.env.ENV} `);
     await this.page.waitForLoadState("domcontentloaded");
   }
 
   async loginValidation() {
     const headerVisibility = await this.commonPage.verifyVisibility(
-      locators.dashboardHeader_xpath
+      locators.dashboardHeader_xpath,
     );
     console.log(`headerVisibility : ${headerVisibility}`);
 
     const upgradeButtonVisibility = await this.commonPage.verifyVisibility(
-      locators.upgradeButton_xpath
+      locators.upgradeButton_xpath,
     );
     console.log(`upgradeButtonVisibility : ${upgradeButtonVisibility}`);
 
